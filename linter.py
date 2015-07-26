@@ -51,6 +51,34 @@ class FileExists(Linter):
         splitcode = code.split('\n')
         found_schrod = False
 
+        tmp = code[0:10]
+        # print (tmp)
+        # schrod_regex = re.compile('\$SCHRODINGER[\/\w+]+(\s+[-\w+\.\:\$]+)+',re.M)
+        schrod_regex = re.compile(
+            '\$SCHRODINGER(\/\w+)+'
+            '(.+(?P<config>-c\s+[a-zA-Z_][\w\.-_]+)?.+\\\\\n)+'
+            '.+(?P<config2>-c\s+[a-zA-Z_][\w\.-_]+)?.+\n',
+            re.M)
+
+        config_regex = re.compile(
+            r'\$SCHRODINGER(.+\\\n)*'
+            r'(.+(?P<config>-c\s+[a-zA-Z_][\w\.-_]+).+)\n'
+            ,re.M)
+        # print (code)
+        # schrodcmd = schrod_regex.search(code)
+        # for f in schrod_regex.finditer(code):        
+        for f in config_regex.finditer(code):        
+            # print (f.group(0))
+            # print (f.group())
+            # print (f.group())
+            print (f.group('config'))
+            # print (f.groups())
+            # print (f.group('config2'))
+        # print (schrodcmd.group())
+        # for match in schrod_regex.match(code):
+        #     print(match)
+        #     pass
+
         for line in splitcode:
             if re.search('\$SCHRODINGER', line):
                 found_schrod = True
@@ -63,13 +91,14 @@ class FileExists(Linter):
 
                 if (os.path.isfile(path+"/"+filename)):
                     matchInLine = re.search(filename, line)
-                    print (matchInLine)
+                    # print (matchInLine)
                     pos = matchInLine.start(0)
                     linted = 'W:%s:%s:warning:File exists'%(len(filename),pos+1) 
                     print (linted)
                     return (linted)
             else: 
                 pass
-                # print ("#####==================Not Linting================")
+
+
         pass
 
