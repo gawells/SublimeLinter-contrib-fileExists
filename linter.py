@@ -62,18 +62,18 @@ class FileExists(Linter):
 
         config_regex = re.compile(
             r'\$SCHRODINGER(.+\\\n)*'
-            r'(.+(?P<config>-c\s+[a-zA-Z_][\w\.-_]+).+)\n'
+            r'.+(?P<config>-c\s+[a-zA-Z_][\w\._-]+).+\n'
             ,re.M)
-        # print (code)
-        # schrodcmd = schrod_regex.search(code)
-        # for f in schrod_regex.finditer(code):        
         for f in config_regex.finditer(code):        
-            # print (f.group(0))
-            # print (f.group())
-            # print (f.group())
             print (f.group('config'))
-            # print (f.groups())
-            # print (f.group('config2'))
+
+        cms_regex = re.compile(
+            r'\$SCHRODINGER(.+\\\n)*'
+            r'.+(?P<config>-in\s+[a-zA-Z_][\w\._-]+).+\n'
+            ,re.M)
+        for f in cms_regex.finditer(code):        
+            print (f.group('config'))
+
         # print (schrodcmd.group())
         # for match in schrod_regex.match(code):
         #     print(match)
