@@ -14,13 +14,14 @@ from SublimeLinter.lint import Linter, util
 import re
 import os
 import sublime
+import json
 
 class FileExists(Linter):
 
     """Provides an interface to fileExists."""
 
-    syntax = ('pbs','source.pbs')
-    # cmd = 'fileExists.py'
+    # syntax = ('pbs','source.pbs')
+    syntax = ('pbs','source.pbs','shell-unix-generic')
     cmd = None
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'
@@ -34,12 +35,10 @@ class FileExists(Linter):
     # selectors = {
     #     'source.pbs': 'schrodinger.input'
     # }
-    # word_re = None
     defaults = {}
     inline_settings = None
     inline_overrides = None
     comment_re = None
-    # warning_color = '000000'
 
     def linearToRowCol(self,pos,code,tablength=4):
     	row = 1
@@ -66,6 +65,7 @@ class FileExists(Linter):
             ,re.M)
 
         for prog_instance in regex.finditer(code):
+            # print (prog_instance.group(0))
             file_regex = re.compile (r'(?P<preceding>[\w_\.-]+)\s+(?P<fname>[\w_\.-]+%s)'%ext)
           
             for file_instance in file_regex.finditer(prog_instance.group(0)):
@@ -103,22 +103,20 @@ class FileExists(Linter):
 
         for prog_instance in regex.finditer(code):        
             file_regex = re.compile(r'(?P<flag>%s)\s+(?P<fname>[\w\._-]+)'%arg)
-            print (prog_instance.group(0))
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 filenameStart = file_instance.start('fname')
                 filename = file_instance.group('fname')
                 pos = self.linearToRowCol(prog_instance.start(0)+filenameStart,code)
-                print (pos)
 
                 if (os.path.isfile(path+"/"+filename)):
                     if input:
-                        linted = 'W:%s:%s:warning:File exists'%(pos[0],pos[1]) 
+                        linted = 'W:%s:%s:warning:File exists (%s)'%(pos[0],pos[1],filename) 
                     else: 
-                        linted = 'E:%s:%s:error:File exists, will be overwritten'%(pos[0],pos[1]) 
+                        linted = 'E:%s:%s:error:File exists, will be overwritten (%s)'%(pos[0],pos[1],filename) 
                 else: 
                     if input:
-                        linted = 'E:%s:%s:error:File not found'%(pos[0],pos[1]) 
+                        linted = 'E:%s:%s:error:File not found (%s)'%(pos[0],pos[1],filename) 
 
                 if linted:
                     all_lints += '\n'+linted
@@ -126,19 +124,40 @@ class FileExists(Linter):
         return all_lints
 
 
+    def read_fileArgs(self, scope):
+        flagFiles = sublime.find_resources("*.fileArgs")       
+
+        for flaglist in flagFiles:
+            print (flaglist)
+            flagdata = json.loads(sublime.load_resource(flaglist) )
+
+            if flagdata['scope'] in scope:
+                print (flagdata['progname'])
+                return flagdata
+
+        return False
+
+
     def run(self,cmd,code):
-        untabbed = code.replace('\t',' '*4)
-        untabbed = code
+        # untabbed = code.replace('\t',' '*4)
+        # untabbed = code
         splitcode = code.split('\n')
         found_schrod = False
 
+        scope_name = self.view.scope_name(0)
+        print(scope_name)
+        fromFile = self.read_fileArgs(scope_name)
+
         all_lints = ''
 
-        all_lints += self.scanFlagged('\$SCHRODINGER', '-c',code)
-        all_lints += self.scanFlagged('\$SCHRODINGER', '-in',code)
-        all_lints += self.scanFlagged('\$SCHRODINGER', '-m',code)
-        all_lints += self.scanFlagged('\$SCHRODINGER', '-o',code,input=False)
-        all_lints += self.scanUnflagged('\$SCHRODINGER', '.cms', code)
+        for inputFlag in fromFile['inputflags']:
+            all_lints += self.scanFlagged(fromFile['progname'], inputFlag, code)
+
+        for outputFlag in fromFile['outputflags']:
+            all_lints += self.scanFlagged(fromFile['progname'], outputFlag, code, False)
+
+        for ext in fromFile['unflaggedExts']:
+            all_lints += self.scanUnflagged(fromFile['progname'], ext, code)
 
         print (all_lints)
 

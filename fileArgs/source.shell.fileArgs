@@ -1,0 +1,14 @@
+{
+	"scope": "source.shell",
+	"progname" : "\\w+",
+	"inputflags" :[
+		"<"
+	],
+	"outputflags" : [
+		">"	
+	],
+	"unflaggedExts": [
+		
+	]
+
+}
