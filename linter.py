@@ -98,7 +98,6 @@ class FileExists(Linter):
                 filename = file_instance.group('fname')
                 isflag = re.search('-{1,2}\w+',file_instance.group('preceding'))
                 if not isflag:
-                    print ("*****"+filename)
                     linted = self.checkForFile(code, path, file_instance, prog_instance, inputfile)
                     all_lints += linted
                 
@@ -140,11 +139,9 @@ class FileExists(Linter):
         flagFiles = sublime.find_resources("*.fileArgs")       
 
         for flaglist in flagFiles:
-            print(flaglist)
             flagdata = json.loads(sublime.load_resource(flaglist))
 
             if flagdata['scope'] in scope:
-                print(flagdata['progname'])
                 return flagdata
 
         return False
@@ -157,7 +154,6 @@ class FileExists(Linter):
         """
 
         scope_name = self.view.scope_name(0)
-        print(scope_name)
         fromFile = self.readFileArgs(scope_name)
 
         all_lints = ''
