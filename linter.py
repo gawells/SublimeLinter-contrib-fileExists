@@ -39,6 +39,7 @@ class FileExists(Linter):
     inline_settings = None
     inline_overrides = None
     comment_re = None
+    # warning_color = '000000'
 
     def linearToRowCol(self,pos,code,tablength=4):
     	row = 1
@@ -53,14 +54,26 @@ class FileExists(Linter):
     			return((row,pos-lastlen+1))
     		row += 1
 
-    def scanRegex(self,prog,arg,code,input=True):
+    def scanUnflagged(self,prog,ext,code,input=True):
+
+        regex = re.compile(
+            r'%s(.+\\\n)*'
+            r'.+\s+((?P<unflagged>[\w\._-]+%s))\s+.*\n' %(prog,ext)
+            ,re.M)
+
+        for f in regex.finditer(code):
+            print ("###"+f.group('unflagged'))
+            pass
+
+ 
+    def scanFlagged(self,prog,arg,code,input=True):
 
         regex = re.compile(
             r'%s(.+\\\n)*'
             r'.+(?P<arg>%s\s+[a-zA-Z_][\w\._-]+).*\n' %(prog,arg)
             ,re.M)
 
-        alllints = ''
+        all_lints = ''
         path = os.path.dirname(self.view.file_name())
         linted = None
 
@@ -81,9 +94,10 @@ class FileExists(Linter):
                     linted = 'E:%s:%s:error:File not found'%(pos[0],pos[1]) 
 
             if linted:
-                alllints += '\n'+linted
+                all_lints += '\n'+linted
 
-        return alllints
+        return all_lints
+
 
     def run(self,cmd,code):
         untabbed = code.replace('\t',' '*4)
@@ -91,20 +105,15 @@ class FileExists(Linter):
         splitcode = code.split('\n')
         found_schrod = False
 
-        schrod_regex = re.compile(
-            '\$SCHRODINGER(\/\w+)+'
-            '(.+(?P<config>-c\s+[a-zA-Z_][\w\.-_]+)?.+\\\\\n)+'
-            '.+(?P<config2>-c\s+[a-zA-Z_][\w\.-_]+)?.+\n',
-            re.M)
+        all_lints = ''
 
-        alllints = ''
+        all_lints += self.scanFlagged('\$SCHRODINGER', '-c',code)
+        all_lints += self.scanFlagged('\$SCHRODINGER', '-in',code)
+        all_lints += self.scanFlagged('\$SCHRODINGER', '-m',code)
+        all_lints += self.scanFlagged('\$SCHRODINGER', '-o',code,input=False)
+        self.scanUnflagged('\$SCHRODINGER', '.cms', code)
 
-        alllints += self.scanRegex('\$SCHRODINGER', '-c',code)
-        alllints += self.scanRegex('\$SCHRODINGER', '-in',code)
-        alllints += self.scanRegex('\$SCHRODINGER', '-m',code)
-        alllints += self.scanRegex('\$SCHRODINGER', '-o',code,input=False)
+        print (all_lints)
 
-        print (alllints)
-
-        return(alllints)
+        return(all_lints)
 
