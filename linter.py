@@ -20,14 +20,8 @@ class FileExists(Linter):
     """Provides an interface to fileExists."""
 
     syntax = ('pbs','source.pbs')
-    # syntax = ('source.pbs','pbs')
     # cmd = 'fileExists.py'
     cmd = None
-    # executable = None
-    # version_args = '--version'
-    # version_re = r'(?P<version>\d+\.\d+\.\d+)'
-    # version_requirement = '>= 1.0'
-    # regex = r''
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'
         r'(?:(?P<error>error)|(?P<warning>(warning|note))):'
@@ -59,24 +53,34 @@ class FileExists(Linter):
     			return((row,pos-lastlen+1))
     		row += 1
 
-    def scanRegex(self,prog,arg,code):
+    def scanRegex(self,prog,arg,code,input=True):
 
         regex = re.compile(
             r'%s(.+\\\n)*'
-            r'.+(?P<arg>%s\s+[a-zA-Z_][\w\._-]+).+\n' %(prog,arg)
+            r'.+(?P<arg>%s\s+[a-zA-Z_][\w\._-]+).*\n' %(prog,arg)
             ,re.M)
 
         alllints = ''
         path = os.path.dirname(self.view.file_name())
+        linted = None
 
         for f in regex.finditer(code):        
-            match = re.search("[a-zA-Z_][\w\._-]*$", f.group('arg'))
-            filenameStart = match.start(0)
-            filename = match.group(0)
+            match = re.search(r'(?P<flag>-\w+)\s+(?P<value>[a-zA-Z_][\w\._-]*)', f.group('arg'))
+
+            filenameStart = match.start('value')
+            filename = match.group('value')
             pos = self.linearToRowCol(f.start('arg')+filenameStart,code)
 
             if (os.path.isfile(path+"/"+filename)):
-                linted = 'W:%s:%s:warning:File exists'%(pos[0],pos[1]) 
+                if input:
+                    linted = 'W:%s:%s:warning:File exists'%(pos[0],pos[1]) 
+                else: 
+                    linted = 'E:%s:%s:error:File exists, will be overwritten'%(pos[0],pos[1]) 
+            else: 
+                if input:
+                    linted = 'E:%s:%s:error:File not found'%(pos[0],pos[1]) 
+
+            if linted:
                 alllints += '\n'+linted
 
         return alllints
@@ -97,6 +101,8 @@ class FileExists(Linter):
 
         alllints += self.scanRegex('\$SCHRODINGER', '-c',code)
         alllints += self.scanRegex('\$SCHRODINGER', '-in',code)
+        alllints += self.scanRegex('\$SCHRODINGER', '-m',code)
+        alllints += self.scanRegex('\$SCHRODINGER', '-o',code,input=False)
 
         print (alllints)
 
