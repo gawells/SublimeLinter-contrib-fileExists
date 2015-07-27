@@ -56,14 +56,40 @@ class FileExists(Linter):
 
     def scanUnflagged(self,prog,ext,code,input=True):
 
+        path = os.path.dirname(self.view.file_name())
+        all_lints = ''
+        linted = None
+
         regex = re.compile(
             r'%s(.+\\\n)*'
-            r'.+\s+((?P<unflagged>[\w\._-]+%s))\s+.*\n' %(prog,ext)
+            r'.+\s+([\w\._-]+%s)+\s+.*\n' %(prog,ext)
             ,re.M)
 
-        for f in regex.finditer(code):
-            print ("###"+f.group('unflagged'))
-            pass
+        for prog_instance in regex.finditer(code):
+            file_regex = re.compile (r'(?P<preceding>[\w_\.-]+)\s+(?P<fname>[\w_\.-]+%s)'%ext)
+          
+            for file_instance in file_regex.finditer(prog_instance.group(0)):
+                # print (file_instance.group(0))
+                filename = file_instance.group('fname')
+                isflag = re.search('-{1,2}\w+',file_instance.group('preceding'))
+                if not isflag:
+                    filenameStart = file_instance.start('fname')
+                    pos = self.linearToRowCol(prog_instance.start(0)+filenameStart, code)
+
+                    if (os.path.isfile(path+"/"+filename)):
+                        if input:
+                            linted = 'W:%s:%s:warning:File exists (%s)'%(pos[0],pos[1],filename) 
+                        else: 
+                            linted = 'E:%s:%s:error:File exists, will be overwritten (%s)'%(pos[0],pos[1],filename) 
+                    else: 
+                        if input:
+                            linted = 'E:%s:%s:error:File not found (%s)'%(pos[0],pos[1],filename) 
+
+                    if linted:
+                        all_lints += '\n'+linted
+
+        print (all_lints)
+        return all_lints
 
  
     def scanFlagged(self,prog,arg,code,input=True):
@@ -74,8 +100,8 @@ class FileExists(Linter):
             ,re.M)
 
         all_lints = ''
-        path = os.path.dirname(self.view.file_name())
         linted = None
+        path = os.path.dirname(self.view.file_name())
 
         for f in regex.finditer(code):        
             match = re.search(r'(?P<flag>-\w+)\s+(?P<value>[a-zA-Z_][\w\._-]*)', f.group('arg'))
@@ -111,7 +137,7 @@ class FileExists(Linter):
         all_lints += self.scanFlagged('\$SCHRODINGER', '-in',code)
         all_lints += self.scanFlagged('\$SCHRODINGER', '-m',code)
         all_lints += self.scanFlagged('\$SCHRODINGER', '-o',code,input=False)
-        self.scanUnflagged('\$SCHRODINGER', '.cms', code)
+        all_lints += self.scanUnflagged('\$SCHRODINGER', '.cms', code)
 
         print (all_lints)
 
