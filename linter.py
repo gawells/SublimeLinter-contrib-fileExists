@@ -69,7 +69,6 @@ class FileExists(Linter):
             file_regex = re.compile (r'(?P<preceding>[\w_\.-]+)\s+(?P<fname>[\w_\.-]+%s)'%ext)
           
             for file_instance in file_regex.finditer(prog_instance.group(0)):
-                # print (file_instance.group(0))
                 filename = file_instance.group('fname')
                 isflag = re.search('-{1,2}\w+',file_instance.group('preceding'))
                 if not isflag:
@@ -88,7 +87,6 @@ class FileExists(Linter):
                     if linted:
                         all_lints += '\n'+linted
 
-        print (all_lints)
         return all_lints
 
  
@@ -96,31 +94,34 @@ class FileExists(Linter):
 
         regex = re.compile(
             r'%s(.+\\\n)*'
-            r'.+(?P<arg>%s\s+[a-zA-Z_][\w\._-]+).*\n' %(prog,arg)
+            r'.+(?P<arg>%s\s+[\w\._-]+).*\n' %(prog,arg)
             ,re.M)
 
         all_lints = ''
         linted = None
         path = os.path.dirname(self.view.file_name())
 
-        for f in regex.finditer(code):        
-            match = re.search(r'(?P<flag>-\w+)\s+(?P<value>[a-zA-Z_][\w\._-]*)', f.group('arg'))
+        for prog_instance in regex.finditer(code):        
+            file_regex = re.compile(r'(?P<flag>%s)\s+(?P<fname>[\w\._-]+)'%arg)
+            print (prog_instance.group(0))
 
-            filenameStart = match.start('value')
-            filename = match.group('value')
-            pos = self.linearToRowCol(f.start('arg')+filenameStart,code)
+            for file_instance in file_regex.finditer(prog_instance.group(0)):
+                filenameStart = file_instance.start('fname')
+                filename = file_instance.group('fname')
+                pos = self.linearToRowCol(prog_instance.start(0)+filenameStart,code)
+                print (pos)
 
-            if (os.path.isfile(path+"/"+filename)):
-                if input:
-                    linted = 'W:%s:%s:warning:File exists'%(pos[0],pos[1]) 
+                if (os.path.isfile(path+"/"+filename)):
+                    if input:
+                        linted = 'W:%s:%s:warning:File exists'%(pos[0],pos[1]) 
+                    else: 
+                        linted = 'E:%s:%s:error:File exists, will be overwritten'%(pos[0],pos[1]) 
                 else: 
-                    linted = 'E:%s:%s:error:File exists, will be overwritten'%(pos[0],pos[1]) 
-            else: 
-                if input:
-                    linted = 'E:%s:%s:error:File not found'%(pos[0],pos[1]) 
+                    if input:
+                        linted = 'E:%s:%s:error:File not found'%(pos[0],pos[1]) 
 
-            if linted:
-                all_lints += '\n'+linted
+                if linted:
+                    all_lints += '\n'+linted
 
         return all_lints
 
