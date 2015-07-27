@@ -46,59 +46,94 @@ class FileExists(Linter):
     inline_overrides = None
     comment_re = None
 
+    def linearToRowCol(self,pos,code,tablength=4):
+    	untabbed = code.replace('\t',' '*tablength)
+    	# print ('00000'+' '*tablength+'`````````')
+    	row = 1
+    	currentlen = 0
+    	lastlen = 0
+    	print ("###"+str(pos))
+    	splitcode = untabbed.split('\n')
+    	print (len(untabbed))
+    	print (len(code))
+
+    	for line in splitcode:
+    		lastlen = currentlen
+    		currentlen += len(line)+1
+    		# print (currentlen)
+    		if currentlen >= pos:
+    			return((row,pos-lastlen+1))
+    		row += 1
+
 
     def run(self,cmd,code):
+        untabbed = code.replace('\t',' '*4)
+        untabbed = code
         splitcode = code.split('\n')
         found_schrod = False
 
-        tmp = code[0:10]
-        # print (tmp)
-        # schrod_regex = re.compile('\$SCHRODINGER[\/\w+]+(\s+[-\w+\.\:\$]+)+',re.M)
         schrod_regex = re.compile(
             '\$SCHRODINGER(\/\w+)+'
             '(.+(?P<config>-c\s+[a-zA-Z_][\w\.-_]+)?.+\\\\\n)+'
             '.+(?P<config2>-c\s+[a-zA-Z_][\w\.-_]+)?.+\n',
             re.M)
 
+
         config_regex = re.compile(
             r'\$SCHRODINGER(.+\\\n)*'
             r'.+(?P<config>-c\s+[a-zA-Z_][\w\._-]+).+\n'
             ,re.M)
-        for f in config_regex.finditer(code):        
+
+        for f in config_regex.finditer(untabbed):        
             print (f.group('config'))
+            match = re.search("[a-zA-Z_][\w\._-]*$", f.group('config'))
+            filenameStart = match.start(0)
+            # matchInLine = re.search(filename, line)
+            print (self.linearToRowCol(f.start('config')+filenameStart,untabbed))
+
 
         cms_regex = re.compile(
             r'\$SCHRODINGER(.+\\\n)*'
             r'.+(?P<config>-in\s+[a-zA-Z_][\w\._-]+).+\n'
             ,re.M)
-        for f in cms_regex.finditer(code):        
+
+        for f in cms_regex.finditer(untabbed):        
             print (f.group('config'))
+            match = re.search("[a-zA-Z_][\w\._-]*$", f.group('config'))
+            filenameStart = match.start(0)
+            print (self.linearToRowCol(f.start('config')+filenameStart,untabbed))
 
-        # print (schrodcmd.group())
-        # for match in schrod_regex.match(code):
-        #     print(match)
-        #     pass
 
+        alllints = ''
+
+        lineNum = 1
         for line in splitcode:
             if re.search('\$SCHRODINGER', line):
                 found_schrod = True
 
-            fileArg = re.search("-[dcm(in)]\s+[a-zA-Z_][a-zA-Z0-9_\.-]*", line)            
-            if fileArg and found_schrod:                
-                match = re.search("[a-zA-Z_][a-zA-Z0-9._-]*$", fileArg.group(0))
-                filename = match.group(0)
-                path = os.path.dirname(self.view.file_name())
+            fileArgRe = re.compile("-([dcm]|in)\s+[a-zA-Z_][\w_\.-]*")            
+            # fileArg = re.search("-[dcm(in)]\s+[a-zA-Z_][a-zA-Z0-9_\.-]*", line)            
+            # if fileArg and found_schrod:                
+            if found_schrod:                
+            	print (line)
+            	for fileArg in fileArgRe.finditer(line):
+	                match = re.search("[a-zA-Z_][\w\._-]*$", fileArg.group(0))
+	                print (fileArg)	                
+	                print (fileArg.group(0))
+	                filename = match.group(0)
+	                print (filename)
+	                path = os.path.dirname(self.view.file_name())
 
-                if (os.path.isfile(path+"/"+filename)):
-                    matchInLine = re.search(filename, line)
-                    # print (matchInLine)
-                    pos = matchInLine.start(0)
-                    linted = 'W:%s:%s:warning:File exists'%(len(filename),pos+1) 
-                    print (linted)
-                    return (linted)
+	                if (os.path.isfile(path+"/"+filename)):
+	                    matchInLine = re.search(filename, line)
+	                    print (matchInLine.group(0))
+	                    pos = matchInLine.start(0)
+	                    linted = 'W:%s:%s:warning:File exists'%(lineNum,pos+1) 
+	                    alllints += '\n'+linted
             else: 
                 pass
+            lineNum += 1
 
-
-        pass
+        print(alllints)
+        return(alllints)
 
