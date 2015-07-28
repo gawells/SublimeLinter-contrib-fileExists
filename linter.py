@@ -100,12 +100,13 @@ class FileExists(Linter):
 
         for prog_instance in regex.finditer(code):
             # print (prog_instance.group(0))
-            file_regex = re.compile(r'(?P<preceding>[\w_\.-]+)\s+(?P<fname>[\w_\.-]+%s)'%ext)
-
+            file_regex = re.compile(r'(?<!-)(?P<preceding>\w[\w_\.-]+)\s+(?P<fname>[\w_\.-]+%s)'%ext)
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 filename = file_instance.group('fname')
-                isflag = re.search('-{1,2}\w+',file_instance.group('preceding'))
+                print("#####"+file_instance.group('preceding')+" "+filename)
+                isflag = re.search('^-{1,2}\w+',file_instance.group('preceding'))
                 if not isflag:
+                    print ("not isflag")
                     linted = self.checkForFile(code, path, file_instance, prog_instance, inputfile)
                     all_lints += linted
                 
@@ -163,9 +164,6 @@ class FileExists(Linter):
 
         scope_name = self.view.scope_name(0)
         fromFile = self.readFileArgs(scope_name)
-
-        if (re.search('cms\Z',code)):
-            print("**********cms end found")
 
         all_lints = ''
 
