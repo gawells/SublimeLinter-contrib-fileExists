@@ -45,6 +45,7 @@ class FileExists(Linter):
         """
         Convert position in string to rectangular coordinates
         """
+
         row = 1
         currentlen = 0
         lastlen = 0
@@ -57,11 +58,17 @@ class FileExists(Linter):
                 return (row, pos-lastlen+1)
             row += 1
 
+
     def checkForFile(self, code, path, filename_instance, prog_instance, inputfile=True):
+        """
+        Check whether P?<fname> in filename_instance regex find (within prog_instance
+        regex find) exists in same directory as file. Return appropriate warning/error
+        """
+
         filename = filename_instance.group('fname')
         filenameStart = filename_instance.start('fname')
         pos = self.posToRowCol(prog_instance.start(0)+filenameStart, code)
-
+        
         if os.path.isfile(path+"/"+filename):
             if inputfile:
                 linted = 'W:%s:%s:warning:File exists (%s)\n'%(pos[0], pos[1], filename)
@@ -74,11 +81,12 @@ class FileExists(Linter):
 
         return linted
 
+
     def scanUnflagged(self, prog, ext, code, inputfile=True):
         """
-            Scan for file arguments not preceded by a -/-- type flag.
-            Check if each file exists and return appropriate warning
-            or error messages for each file
+        Scan for file arguments not preceded by a -/-- type flag.
+        Check if each file exists and return appropriate warning
+        or error messages for each file
         """
 
         path = os.path.dirname(self.view.file_name())
@@ -87,7 +95,7 @@ class FileExists(Linter):
 
         regex = re.compile(
             r'%s(.+\\\n)*'
-            r'.+\s+([\w\._-]+%s)+\s+.*\n' %(prog, ext)
+            r'.+\s+([\w\._-]+%s)+\s+.*(\n|\Z)' %(prog, ext)
             , re.M)
 
         for prog_instance in regex.finditer(code):
@@ -107,19 +115,19 @@ class FileExists(Linter):
  
     def scanFlagged(self, prog, arg, code, inputfile=True):
         """
-            Scan for file arguments preceded by -/-- type flags. 
-            Check if each file exists and return appropriate warning
-            or error messages for each file
+        Scan for file arguments preceded by -/-- type flags. 
+        Check if each file exists and return appropriate warning
+        or error messages for each file
         """
 
         regex = re.compile(
             r'%s(.+\\\n)*'
-            r'.+(?P<arg>%s\s+[\w\._-]+).*\n' %(prog,arg)
+            r'.+(?P<arg>%s\s+[\w\._-]+).*(\n|\Z)'%(prog,arg)
             ,re.M)
 
         all_lints = ''
         linted = None
-        path = os.path.dirname(self.view.file_name())
+        path = os.path.dirname(self.view.file_name())        
 
         for prog_instance in regex.finditer(code):
             file_regex = re.compile(r'(?P<flag>%s)\s+(?P<fname>[\w\._-]+)'%arg)
@@ -156,9 +164,12 @@ class FileExists(Linter):
         scope_name = self.view.scope_name(0)
         fromFile = self.readFileArgs(scope_name)
 
+        if (re.search('cms\Z',code)):
+            print("**********cms end found")
+
         all_lints = ''
 
-        for inputFlag in fromFile['inputflags']:
+        for inputFlag in fromFile['inputflags']:            
             all_lints += self.scanFlagged(fromFile['progname'], inputFlag, code)
 
         for outputFlag in fromFile['outputflags']:
