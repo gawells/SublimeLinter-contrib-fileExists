@@ -21,7 +21,7 @@ class FileExists(Linter):
     """Provides an interface to fileExists."""
 
     # syntax = ('pbs','source.pbs')
-    syntax = ('pbs', 'source.pbs', 'shell-unix-generic')
+    syntax = ('pbs', 'source.pbs', 'shell-unix-generic','source.shell')
     cmd = None
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'
