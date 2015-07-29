@@ -65,6 +65,7 @@ class FileExists(Linter):
         regex find) exists in same directory as file. Return appropriate warning/error
         """
 
+
         filename = filename_instance.group('fname')
         filenameStart = filename_instance.start('fname')
         pos = self.posToRowCol(prog_instance.start(0)+filenameStart, code)
@@ -78,6 +79,8 @@ class FileExists(Linter):
         else:
             if inputfile:
                 linted = 'E:%s:%s:error:File not found (%s)\n'%(pos[0], pos[1], filename)
+            else:
+                linted = ""
 
         return linted
 
@@ -94,12 +97,13 @@ class FileExists(Linter):
         linted = None
 
         regex = re.compile(
-            r'(?<!#\s)%s(.+\\\n)*'
+            r'(?<!#.)%s(.+\\\n)*'
             r'(.+([\w\._-]+%s).*(\n|\Z))' %(prog, ext)
             , re.M)
 
         for prog_instance in regex.finditer(code):
-            file_regex = re.compile(r'(?<!-)(?P<preceding>\w[\w_\.-]+)\s+(?P<fname>[\w_\.-]+%s)'%ext)
+            file_regex = re.compile(r'(?<!-)(?P<preceding>\w[\w_\.-]+)[\\\s]+(?P<fname>[\w_\.-]+%s)'%ext)
+            print("Command is " + prog_instance.group(0))
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 filename = file_instance.group('fname')
@@ -120,17 +124,16 @@ class FileExists(Linter):
         """
 
         regex = re.compile(
-            r'(?<!#\s)%s(.+\\\n)*'
-            r'(.+([\s\w\._-]+%s).*(\n|\Z))' %(prog, arg)
+            r'(?<!#.)%s(.+\\\n)*'
+            r'(.+([\s\w\._-]*%s).*(\n|\Z))' %(prog, arg)
             , re.M)
-
 
         all_lints = ''
         linted = None
         path = os.path.dirname(self.view.file_name())        
 
         for prog_instance in regex.finditer(code):
-            file_regex = re.compile(r'(?P<flag>%s)\s+(?P<fname>[\w\._-]+)'%arg)
+            file_regex = re.compile(r'(?P<flag>%s)[\\\s]+(?P<fname>[\w\._-]+)'%arg)
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 linted = self.checkForFile(code, path, file_instance, prog_instance, inputfile)
@@ -166,7 +169,7 @@ class FileExists(Linter):
 
         all_lints = ''
 
-        for inputFlag in fromFile['inputflags']:            
+        for inputFlag in fromFile['inputflags']:      
             all_lints += self.scanFlagged(fromFile['progname'], inputFlag, code)
 
         for outputFlag in fromFile['outputflags']:
@@ -175,7 +178,7 @@ class FileExists(Linter):
         for ext in fromFile['unflaggedExts']:
             all_lints += self.scanUnflagged(fromFile['progname'], ext, code)
 
-        print(all_lints)
+        # print(all_lints)
 
         return all_lints
 
