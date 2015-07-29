@@ -94,20 +94,17 @@ class FileExists(Linter):
         linted = None
 
         regex = re.compile(
-            r'%s(.+\\\n)*'
+            r'(?<!#\s)%s(.+\\\n)*'
             r'(.+([\w\._-]+%s).*(\n|\Z))' %(prog, ext)
             , re.M)
 
         for prog_instance in regex.finditer(code):
-            print("Command is:"+prog_instance.group(0))
-
             file_regex = re.compile(r'(?<!-)(?P<preceding>\w[\w_\.-]+)\s+(?P<fname>[\w_\.-]+%s)'%ext)
+
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 filename = file_instance.group('fname')
-                # print("#####"+file_instance.group('preceding')+" "+filename)
                 isflag = re.search('^-{1,2}\w+',file_instance.group('preceding'))
                 if not isflag:
-                    # print ("not isflag")
                     linted = self.checkForFile(code, path, file_instance, prog_instance, inputfile)
                     all_lints += linted
                 
@@ -122,13 +119,8 @@ class FileExists(Linter):
         or error messages for each file
         """
 
-        # regex = re.compile(
-        #     r'%s(.+\\\n)*'
-        #     r'.+(?P<arg>%s\s+[\w\._-]+).*(\n|\Z)'%(prog,arg)
-        #     ,re.M)
-
         regex = re.compile(
-            r'%s(.+\\\n)*'
+            r'(?<!#\s)%s(.+\\\n)*'
             r'(.+([\s\w\._-]+%s).*(\n|\Z))' %(prog, arg)
             , re.M)
 
@@ -138,8 +130,6 @@ class FileExists(Linter):
         path = os.path.dirname(self.view.file_name())        
 
         for prog_instance in regex.finditer(code):
-            print("Command is:"+prog_instance.group(0))
-
             file_regex = re.compile(r'(?P<flag>%s)\s+(?P<fname>[\w\._-]+)'%arg)
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
