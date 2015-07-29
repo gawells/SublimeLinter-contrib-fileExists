@@ -1,8 +1,6 @@
 SublimeLinter-contrib-fileExists
 ================================
 
-[![Build Status](https://travis-ci.org/SublimeLinter/SublimeLinter-contrib-fileExists.svg?branch=master)](https://travis-ci.org/SublimeLinter/SublimeLinter-contrib-fileExists)
-
 Prevent filename argument typos and accidentally overwriting old outputs (especially for batch queue scripts). This linter plugin for [SublimeLinter][docs] lints file name arguments within user specified commands. It is intended to be used with derivatives of the “__shell__” syntax. Filename arguments are checked against files in the same directory as the script. Input files will be highlighted as "warnings" if present, otherwise as "errors". Existing output files will be highligted as "errors", or left blank otherwise.
 
 Json with the .fileArgs extenion are used to specifiy which programs and associated flags are to be linted.
