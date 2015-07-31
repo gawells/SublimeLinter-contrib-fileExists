@@ -108,7 +108,8 @@ class FileExists(Linter):
                 filename = file_instance.group('fname')
                 isflag = re.search('^-{1,2}\w+',file_instance.group('preceding'))
                 if not isflag:
-                    linted = self.checkForFile(code, path, file_instance, prog_instance, inputfile)
+                    linted = self.checkForFile(code, path, file_instance, \
+                        prog_instance, inputfile)
                     all_lints += linted
                 
 
@@ -122,22 +123,34 @@ class FileExists(Linter):
         or error messages for each file
         """
 
+        # regex = re.compile(
+        #     r'(?<!#.)%s(.+\\\n)*'
+        #     r'(.+([\s\w\._-]*%s).*(\n|\Z))' %(prog, arg)
+        #     , re.M)
+
         regex = re.compile(
-            r'(?<!#.)%s(.+\\\n)*'
-            r'(.+([\s\w\._-]*%s).*(\n|\Z))' %(prog, arg)
-            , re.M)
+            r'(?<!#.)%s(.+\\\s*\n)*'
+            r'(.*(\n|\Z))' %(prog)
+            )
 
         all_lints = ''
         linted = None
         path = os.path.dirname(self.view.file_name())        
 
+        all = []
+
         for prog_instance in regex.finditer(code):
-            file_regex = re.compile(r'(?P<flag>%s)[\n\\\s]+(?P<fname>[\w\._-]+)'%arg)
+            all.append(prog_instance.group(0))
+            file_regex = re.compile(r'(?P<flag>%s)[\s\\]+(?P<fname>[\w\._-]+)'%arg,
+                re.M)
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 print(file_instance.group(0))
-                linted = self.checkForFile(code, path, file_instance, prog_instance, inputfile)
+                linted = self.checkForFile(code, path, file_instance, \
+                    prog_instance, inputfile)
                 all_lints += linted
+
+        print("Total "+str(len(all)))
 
         return all_lints
 
