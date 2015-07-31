@@ -102,7 +102,7 @@ class FileExists(Linter):
             , re.M)
 
         for prog_instance in regex.finditer(code):
-            file_regex = re.compile(r'(?<!-)(?P<preceding>\w[\w_\.-]+)[\n\\\s]+(?P<fname>[\w_\.-]+%s)'%ext)
+            file_regex = re.compile(r'(?<!-)(?P<preceding>[\']?\w[\w_\.-]+[\']?)[\n\\\s]+(?P<fname>[\w_\.-]+%s)'%ext)
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 filename = file_instance.group('fname')
@@ -148,6 +148,7 @@ class FileExists(Linter):
                 print(file_instance.group(0))
                 linted = self.checkForFile(code, path, file_instance, \
                     prog_instance, inputfile)
+                linted = self.checkForFile(code, path, file_instance, prog_instance, inputfile)
                 all_lints += linted
 
         print("Total "+str(len(all)))
@@ -169,7 +170,6 @@ class FileExists(Linter):
                 return flagdata
 
         return False
-
 
     def run(self, cmd, code):
         """
