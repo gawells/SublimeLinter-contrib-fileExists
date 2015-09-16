@@ -1,14 +1,13 @@
 {
 	"scope": "source.shell",
-	"progname" : "\\w+",
-	"inputflags" :[
-		"<"
-	],
-	"outputflags" : [
-		">"	
-	],
-	"unflaggedExts": [
-		
+	"keywords" : [
+		{"key" : "\\w+",
+		"inputflags" :["<"],
+		"outputflags" : [">"],
+		"unflaggedInputs": []		,
+		"unflaggedOutputs": []		
+		}
 	]
+	
 
 }

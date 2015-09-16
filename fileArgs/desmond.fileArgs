@@ -1,16 +1,21 @@
 {
 	"scope": "source.pbs",
-	"progname" : "\\$SCHRODINGER",
-	"inputflags" :[
-		"-in",
-		"-m",
-		"-c"
-	],
-	"outputflags" : [
-		"-o"	
-	],
-	"unflaggedExts": [
-		".cms"
+	"keywords":[
+		{"key" : "\\$SCHRODINGER",
+			"inputflags" :[
+				"-in",
+				"-m",
+				"-c"
+			],
+			"outputflags" : [
+				"-o"	
+			],
+			"unflaggedInputs": [
+				"\\.cms"
+			],
+			"unflaggedOutputs": [			]
+		}
 	]
+	
 
 }

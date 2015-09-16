@@ -15,13 +15,26 @@ import re
 import os
 import sublime
 import json
+import logging
+
+PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
+DEBUG = PLUGIN_SETTINGS.get("debug", False)
+
+logging.basicConfig(format='[fileExists] %(message)s ')
+logger = logging.getLogger(__name__)
+
+if (DEBUG):
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.WARNING)
+
 
 class FileExists(Linter):
 
     """Provides an interface to fileExists."""
 
     # syntax = ('pbs','source.pbs')
-    syntax = ('pbs', 'source.pbs', 'shell-unix-generic','source.shell')
+    syntax = ('pbs', 'source.pbs', 'shell-unix-generic','source.shell','source.tcl','tcl')
     cmd = None
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'
@@ -102,10 +115,11 @@ class FileExists(Linter):
             , re.M)
 
         for prog_instance in regex.finditer(code):
-            file_regex = re.compile(r'(?<!-)(?P<preceding>[\']?\w[\w_\.-]+[\']?)[\n\\\s]+(?P<fname>[\w_\.-]+%s)'%ext)
+            file_regex = re.compile(r'(?<!-)(?P<preceding>[\']?\w[\w_\.-]+[\']?)[\n\\\s]+(?P<fname>[/\w_\.-]+%s)'%ext)
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 filename = file_instance.group('fname')
+                # logger.debug(filename)
                 isflag = re.search('^-{1,2}\w+',file_instance.group('preceding'))
                 if not isflag:
                     linted = self.checkForFile(code, path, file_instance, \
@@ -141,7 +155,7 @@ class FileExists(Linter):
 
         for prog_instance in regex.finditer(code):
             all.append(prog_instance.group(0))
-            file_regex = re.compile(r'(?P<flag>%s)[\s\\]+(?P<fname>[\w\._-]+)'%arg,
+            file_regex = re.compile(r'(?P<flag>%s)[\s\\]+(?P<fname>[/\w\.\/_-]+)'%arg,
                 re.M)
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
@@ -151,7 +165,7 @@ class FileExists(Linter):
                 linted = self.checkForFile(code, path, file_instance, prog_instance, inputfile)
                 all_lints += linted
 
-        print("Total "+str(len(all)))
+        # print("Total "+str(len(all)))
 
         return all_lints
 
@@ -164,6 +178,7 @@ class FileExists(Linter):
         flagFiles = sublime.find_resources("*.fileArgs")       
 
         for flaglist in flagFiles:
+            logger.debug(flaglist)
             flagdata = json.loads(sublime.load_resource(flaglist))
 
             if flagdata['scope'] in scope:
@@ -182,14 +197,21 @@ class FileExists(Linter):
 
         all_lints = ''
 
-        for inputFlag in fromFile['inputflags']:      
-            all_lints += self.scanFlagged(fromFile['progname'], inputFlag, code)
+        for entry in fromFile['keywords']:
+            logger.debug (entry['key'])
+            # print (fromFile['keywords'][key]['unflaggedExts'])
 
-        for outputFlag in fromFile['outputflags']:
-            all_lints += self.scanFlagged(fromFile['progname'], outputFlag, code, False)
+            for inputFlag in entry['inputflags']:      
+                all_lints += self.scanFlagged(entry['key'], inputFlag, code)
 
-        for ext in fromFile['unflaggedExts']:
-            all_lints += self.scanUnflagged(fromFile['progname'], ext, code)
+            for outputFlag in entry['outputflags']:
+                all_lints += self.scanFlagged(entry['key'], outputFlag, code, False)
+
+            for ext in entry['unflaggedInputs']:
+                all_lints += self.scanUnflagged(entry['key'], ext, code)
+
+            for ext in entry['unflaggedOutputs']:
+                all_lints += self.scanUnflagged(entry['key'], ext, code, False)
 
         # print(all_lints)
 
