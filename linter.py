@@ -71,6 +71,28 @@ class FileExists(Linter):
                 return (row, pos-lastlen+1)
             row += 1
 
+    def splitInterruptedLint(self,lint):
+        """
+        Split linted area interrupted by non-\w characters into multiple
+        warnings/errors
+        """
+
+        linted = ""
+
+        fname = re.search("(?P<open>\()(?P<file>[\w\.\/_-]+)(?P<close>\))",lint).group('file')
+        positions = lint.split(":")
+
+        slash_search = re.compile("/")
+        slashes = []
+        for slash_instance in slash_search.finditer(fname):
+            slashes.append(slash_instance.start())
+
+        if len(slashes) > 0:
+            for s in slashes:
+                linted += '\nW:%s:%s:warning:File exists (%s)\n'%(positions[1], int(positions[2])+s+1, fname)
+
+        return linted
+
 
     def checkForFile(self, code, path, filename_instance, prog_instance, inputfile=True):
         """
@@ -86,6 +108,7 @@ class FileExists(Linter):
         if os.path.isfile(path+"/"+filename):
             if inputfile:
                 linted = 'W:%s:%s:warning:File exists (%s)\n'%(pos[0], pos[1], filename)
+                linted += self.splitInterruptedLint( linted)
             else:
                 linted = 'E:%s:%s:error:File exists, will be overwritten (%s)\n'\
                 %(pos[0], pos[1], filename)
@@ -178,7 +201,7 @@ class FileExists(Linter):
         flagFiles = sublime.find_resources("*.fileArgs")       
 
         for flaglist in flagFiles:
-            logger.debug(flaglist)
+            # logger.debug(flaglist)
             flagdata = json.loads(sublime.load_resource(flaglist))
 
             if flagdata['scope'] in scope:
@@ -198,7 +221,7 @@ class FileExists(Linter):
         all_lints = ''
 
         for entry in fromFile['keywords']:
-            logger.debug (entry['key'])
+            # logger.debug (entry['key'])
             # print (fromFile['keywords'][key]['unflaggedExts'])
 
             for inputFlag in entry['inputflags']:      
