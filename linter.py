@@ -34,23 +34,16 @@ class FileExists(Linter):
 
     """Provides an interface to fileExists."""
 
-    # syntax = ('pbs','source.pbs')
-    # syntax = ('pbs', 'source.pbs', 'shell-unix-generic','source.shell','source.tcl','tcl','namd')
     syntax = tuple(SYNTAX)
-    # felogger.debug(syntax)
     cmd = None
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'
         r'(?:(?P<error>error)|(?P<warning>(warning|note))):'
         r'(?P<message>.+)$'
     )
-    word_re = r'(^[-\w\.]+)'
+    word_re = r'(^[-\w\.\/]+)'
     multiline = False
     line_col_base = (1, 1)
-    # error_stream = util.STREAM_BOTH
-    # selectors = {
-    #     'source.pbs': 'schrodinger.input'
-    # }
     defaults = {}
     inline_settings = None
     inline_overrides = None
@@ -119,16 +112,16 @@ class FileExists(Linter):
 
         if os.path.isfile(fullpath):
             if inputfile:
-                linted = 'W:%s:%s:warning:File exists (%s)\n'%(pos[0], pos[1], filename)
-                linted += self.splitInterruptedLint( linted)
+                linted = 'W:%s:%s:note:File exists (%s)\n'%(pos[0], pos[1], filename)
+                # linted += self.splitInterruptedLint( linted)
             else:
                 linted = 'E:%s:%s:error:File exists, will be overwritten (%s)\n'\
                 %(pos[0], pos[1], filename)
-                linted += self.splitInterruptedLint(linted)
+                # linted += self.splitInterruptedLint(linted)
         else:
             if inputfile:
                 linted = 'E:%s:%s:error:File not found (%s)\n'%(pos[0], pos[1], filename)
-                linted += self.splitInterruptedLint(linted)
+                # linted += self.splitInterruptedLint(linted)
             else:
                 linted = ""
 
