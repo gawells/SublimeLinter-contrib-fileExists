@@ -18,15 +18,16 @@ import json
 import logging
 
 PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
+SYNTAX = PLUGIN_SETTINGS.get("syntax")
 DEBUG = PLUGIN_SETTINGS.get("debug", False)
 
 logging.basicConfig(format='[fileExists] %(message)s ')
-logger = logging.getLogger(__name__)
+felogger = logging.getLogger(__name__)
 
 if (DEBUG):
-    logger.setLevel(logging.DEBUG)
+    felogger.setLevel(logging.DEBUG)
 else:
-    logger.setLevel(logging.WARNING)
+    felogger.setLevel(logging.WARNING)
 
 
 class FileExists(Linter):
@@ -34,7 +35,9 @@ class FileExists(Linter):
     """Provides an interface to fileExists."""
 
     # syntax = ('pbs','source.pbs')
-    syntax = ('pbs', 'source.pbs', 'shell-unix-generic','source.shell','source.tcl','tcl')
+    # syntax = ('pbs', 'source.pbs', 'shell-unix-generic','source.shell','source.tcl','tcl','namd')
+    syntax = tuple(SYNTAX)
+    # felogger.debug(syntax)
     cmd = None
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'
@@ -78,8 +81,9 @@ class FileExists(Linter):
         """
 
         linted = ""
-
+        # felogger.debug(lint)
         fname = re.search("(?P<open>\()(?P<file>[\w\.\/_-]+)(?P<close>\))",lint).group('file')
+        felogger.debug(fname)
         positions = lint.split(":")
 
         slash_search = re.compile("/")
@@ -88,8 +92,12 @@ class FileExists(Linter):
             slashes.append(slash_instance.start())
 
         if len(slashes) > 0:
-            for s in slashes:
-                linted += '\nW:%s:%s:warning:File exists (%s)\n'%(positions[1], int(positions[2])+s+1, fname)
+            for s in slashes:                
+                # linted += '\nW:%s:%s:warning:File exists (%s)\n'%(positions[1], int(positions[2])+s+1, fname)
+                linted += '\n%s:%s:%s:%s:%s'\
+                %(positions[0],positions[1],int(positions[2])+s,positions[3], positions[4])
+                linted += '\n%s:%s:%s:%s:%s'\
+                %(positions[0],positions[1],int(positions[2])+s+1,positions[3], positions[4])
 
         return linted
 
@@ -104,17 +112,23 @@ class FileExists(Linter):
         filename = filename_instance.group('fname')
         filenameStart = filename_instance.start('fname')
         pos = self.posToRowCol(prog_instance.start(0)+filenameStart, code)
-        
-        if os.path.isfile(path+"/"+filename):
+        if filename[0] == "/":
+            fullpath = filename
+        else:
+            fullpath = path+"/"+filename
+
+        if os.path.isfile(fullpath):
             if inputfile:
                 linted = 'W:%s:%s:warning:File exists (%s)\n'%(pos[0], pos[1], filename)
                 linted += self.splitInterruptedLint( linted)
             else:
                 linted = 'E:%s:%s:error:File exists, will be overwritten (%s)\n'\
                 %(pos[0], pos[1], filename)
+                linted += self.splitInterruptedLint(linted)
         else:
             if inputfile:
                 linted = 'E:%s:%s:error:File not found (%s)\n'%(pos[0], pos[1], filename)
+                linted += self.splitInterruptedLint(linted)
             else:
                 linted = ""
 
@@ -142,7 +156,7 @@ class FileExists(Linter):
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 filename = file_instance.group('fname')
-                # logger.debug(filename)
+                # felogger.debug(filename)
                 isflag = re.search('^-{1,2}\w+',file_instance.group('preceding'))
                 if not isflag:
                     linted = self.checkForFile(code, path, file_instance, \
@@ -201,7 +215,7 @@ class FileExists(Linter):
         flagFiles = sublime.find_resources("*.fileArgs")       
 
         for flaglist in flagFiles:
-            # logger.debug(flaglist)
+            # felogger.debug(flaglist)
             flagdata = json.loads(sublime.load_resource(flaglist))
 
             if flagdata['scope'] in scope:
@@ -216,12 +230,13 @@ class FileExists(Linter):
         """
 
         scope_name = self.view.scope_name(0)
+        felogger.debug(scope_name)
         fromFile = self.readFileArgs(scope_name)
 
         all_lints = ''
 
         for entry in fromFile['keywords']:
-            # logger.debug (entry['key'])
+            # felogger.debug (entry['key'])
             # print (fromFile['keywords'][key]['unflaggedExts'])
 
             for inputFlag in entry['inputflags']:      
