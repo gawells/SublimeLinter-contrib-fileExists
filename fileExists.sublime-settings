@@ -10,6 +10,7 @@
 				"shell-unix-generic",
 	 			"source.shell",
 				"tcl",
+				"source.namd",
 				"namd"
 			]
 }
