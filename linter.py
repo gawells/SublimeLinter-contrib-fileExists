@@ -14,27 +14,51 @@ from SublimeLinter.lint import Linter, util
 import re
 import os
 import sublime
+import sublime_plugin
 import json
 import logging
 
-PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
-SYNTAX = PLUGIN_SETTINGS.get("syntax")
-DEBUG = PLUGIN_SETTINGS.get("debug", False)
+# PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
+# SYNTAX = PLUGIN_SETTINGS.get("syntax")
+# DEBUG = PLUGIN_SETTINGS.get("debug", False)
 
-logging.basicConfig(format='[fileExists] %(message)s ')
-felogger = logging.getLogger(__name__)
+# logging.basicConfig(format='[fileExists] %(message)s ')
+# felogger = logging.getLogger(__name__)
 
-if (DEBUG):
-    felogger.setLevel(logging.DEBUG)
-else:
-    felogger.setLevel(logging.WARNING)
+# if (DEBUG):
+#     felogger.setLevel(logging.DEBUG)
+# else:
+#     felogger.setLevel(logging.WARNING)
 
+# SYNTAX = "source.shell"
+
+SYNTAX = 'source.shell'
+
+def plugin_loaded():
+    global SYNTAX
+    PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
+    print (sublime.find_resources("fileExists.sublime-settings"))
+    SYNTAX = PLUGIN_SETTINGS.get("syntax")
+    DEBUG = PLUGIN_SETTINGS.get("debug", False)
+
+    logging.basicConfig(format='[fileExists] %(message)s ')
+    global felogger 
+    felogger = logging.getLogger(__name__)
+
+    if (DEBUG):
+        felogger.setLevel(logging.DEBUG)
+    else:
+        felogger.setLevel(logging.WARNING)
+
+    print("=========================================================")
+    # sublime_plugin.reload_plugin("SublimeLinter")
 
 class FileExists(Linter):
 
     """Provides an interface to fileExists."""
 
     syntax = tuple(SYNTAX)
+    print(syntax)
     cmd = None
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'
@@ -66,7 +90,7 @@ class FileExists(Linter):
             if currentlen >= pos:
                 return (row, pos-lastlen+1)
             row += 1
-
+    
     def splitInterruptedLint(self,lint):
         """
         Split linted area interrupted by non-\w characters into multiple
