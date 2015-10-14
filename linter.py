@@ -30,18 +30,15 @@ import logging
 # else:
 #     felogger.setLevel(logging.WARNING)
 
-# SYNTAX = "source.shell"
-
-SYNTAX = 'source.shell'
+SYNTAX = ['source.shell']
 
 def plugin_loaded():
     global SYNTAX
     PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
-    print (sublime.find_resources("fileExists.sublime-settings"))
     SYNTAX = PLUGIN_SETTINGS.get("syntax")
     DEBUG = PLUGIN_SETTINGS.get("debug", False)
 
-    logging.basicConfig(format='[fileExists] %(message)s ')
+    logging.basicConfig(format='%(message)s ')
     global felogger 
     felogger = logging.getLogger(__name__)
 
@@ -50,8 +47,7 @@ def plugin_loaded():
     else:
         felogger.setLevel(logging.WARNING)
 
-    print("=========================================================")
-    # sublime_plugin.reload_plugin("SublimeLinter")
+    felogger.debug("FileExists: "+str(sublime.find_resources("fileExists.sublime-settings")))
 
 class FileExists(Linter):
 
@@ -100,7 +96,7 @@ class FileExists(Linter):
         linted = ""
         # felogger.debug(lint)
         fname = re.search("(?P<open>\()(?P<file>[\w\.\/_-]+)(?P<close>\))",lint).group('file')
-        felogger.debug(fname)
+        felogger.debug("FileExists: "+fname)
         positions = lint.split(":")
 
         slash_search = re.compile("/")
@@ -173,7 +169,7 @@ class FileExists(Linter):
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 filename = file_instance.group('fname')
-                # felogger.debug(filename)
+                # felogger.debug("FileExists: "+filename)
                 isflag = re.search('^-{1,2}\w+',file_instance.group('preceding'))
                 if not isflag:
                     linted = self.checkForFile(code, path, file_instance, \
@@ -232,7 +228,7 @@ class FileExists(Linter):
         flagFiles = sublime.find_resources("*.fileArgs")       
 
         for flaglist in flagFiles:
-            # felogger.debug(flaglist)
+            # felogger.debug("FileExists: "+flaglist)
             flagdata = json.loads(sublime.load_resource(flaglist))
 
             if flagdata['scope'] in scope:
@@ -247,13 +243,13 @@ class FileExists(Linter):
         """
 
         scope_name = self.view.scope_name(0)
-        felogger.debug(scope_name)
+        # felogger.debug("FileExists: "+scope_name)
         fromFile = self.readFileArgs(scope_name)
 
         all_lints = ''
 
         for entry in fromFile['keywords']:
-            # felogger.debug (entry['key'])
+            # felogger.debug ("FileExists: "+entry['key'])
             # print (fromFile['keywords'][key]['unflaggedExts'])
 
             for inputFlag in entry['inputflags']:      
