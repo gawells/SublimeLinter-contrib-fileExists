@@ -18,43 +18,16 @@ import sublime_plugin
 import json
 import logging
 
-# PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
-# SYNTAX = PLUGIN_SETTINGS.get("syntax")
-# DEBUG = PLUGIN_SETTINGS.get("debug", False)
-
-# logging.basicConfig(format='[fileExists] %(message)s ')
-# felogger = logging.getLogger(__name__)
-
-# if (DEBUG):
-#     felogger.setLevel(logging.DEBUG)
-# else:
-#     felogger.setLevel(logging.WARNING)
 
 SYNTAX = ['source.shell']
-
-def plugin_loaded():
-    global SYNTAX
-    PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
-    SYNTAX = PLUGIN_SETTINGS.get("syntax")
-    DEBUG = PLUGIN_SETTINGS.get("debug", False)
-
-    logging.basicConfig(format='%(message)s ')
-    global felogger 
-    felogger = logging.getLogger(__name__)
-
-    if (DEBUG):
-        felogger.setLevel(logging.DEBUG)
-    else:
-        felogger.setLevel(logging.WARNING)
-
-    felogger.debug("FileExists: "+str(sublime.find_resources("fileExists.sublime-settings")))
+logging.basicConfig(format='%(message)s ')
+felogger = logging.getLogger(__name__)
 
 class FileExists(Linter):
 
     """Provides an interface to fileExists."""
-
+    
     syntax = tuple(SYNTAX)
-    print(syntax)
     cmd = None
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'
@@ -68,6 +41,16 @@ class FileExists(Linter):
     inline_settings = None
     inline_overrides = None
     comment_re = None
+
+    @classmethod
+    def initialize(cls):
+        """Perform class-level initialization."""
+
+        # super().initialize() # this fails, not sure why yet
+        PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
+        SYNTAX = PLUGIN_SETTINGS.get("syntax")
+        felogger.debug("FileExists init: %s"%SYNTAX)
+        cls.syntax = tuple(SYNTAX)
 
     @classmethod
     def posToRowCol(cls, pos, code):
@@ -241,6 +224,10 @@ class FileExists(Linter):
         Return error and warning messages internally instead of
         running through external linter
         """
+
+        settings = sublime.load_settings("fileExists.sublime-settings")
+        self.syntax = settings.get("syntax")
+        felogger.debug("FileExists reset: %s"%self.syntax)
 
         scope_name = self.view.scope_name(0)
         # felogger.debug("FileExists: "+scope_name)
