@@ -139,43 +139,52 @@ class FileExists(Linter):
         all_lints = ''
         linted = None
 
+        # regex corresponding to 'prog(ram) filename.(ext)ension'
+        # first look for matching extension, then extract full file name
         regex = re.compile(
-            r'(?<!#.)%s(.+\\\n)*'
-            r'(.+([\w\._-]+%s).*(\n|\Z))' %(prog, ext)
+            r'(?<!#.)(?<=\s)%s'         # keyword exists and not in a comment
+            r'(.+?\\\n)*?'                # including broken by newlines
+            r'(.+?([\w\._-]+%s).'        # argument to keyword
+            r'*?(\n|\Z))' %(prog, ext)   # match end of line or end of file
             , re.M)
 
+        # Iterate over all "prog(ram) filename.ext(ension)" instances in code
         for prog_instance in regex.finditer(code):
-            file_regex = re.compile(r'(?<!-)(?P<preceding>[\']?\w[\w_\.-]+[\']?)[\n\\\s]+(?P<fname>[/\w_\.-]+%s)'%ext)
+            felogger.debug('FileExists, unflagged argument found')
+            # regex to extract filenames out of 'prog(ram) filename.ext(ension)' instance
+            file_regex = re.compile(
+                r'(?<!-)(?P<preceding>[\']?\w[\w_\.-]+[\']?)[\n\\\s]+'  # preceding junk
+                r'(?P<fname>[/\w_\.-]+%s)'%ext                          # Full file name
+            )
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
                 filename = file_instance.group('fname')
-                # felogger.debug(filename)
-                isflag = re.search('^-{1,2}\w+',file_instance.group('preceding'))
-                if not isflag:
-                    linted = self.checkForFile(code, path, file_instance, \
-                        prog_instance, inputfile)
-                    all_lints += linted
-                
-
+                felogger.debug("FileExists, check for %s"%file_instance.group(0))
+                # isflag = re.search('^-{1,2}\w+',file_instance.group('preceding')) # taken care of by (?<!-) regex?
+                # if not isflag:
+                linted = self.checkForFile(code, path, file_instance, \
+                    prog_instance, inputfile)
+                all_lints += linted
+           
         return all_lints
 
  
-    def scanFlagged(self, prog, arg, code, inputfile=True):
+    def scanFlagged(self, prog, flag, code, inputfile=True):
         """
         Scan for file arguments preceded by -/-- type flags. 
         Check if each file exists and return appropriate warning
         or error messages for each file
         """
+            # r'(.+\\\s*\n)*'         # allow for linebreaks before flag
 
-        # regex = re.compile(
-        #     r'(?<!#.)%s(.+\\\n)*'
-        #     r'(.+([\s\w\._-]*%s).*(\n|\Z))' %(prog, arg)
-        #     , re.M)
-
+        # regex to find all instances of 'prog(gram) (flag) argument'
         regex = re.compile(
-            r'(?<!#.)%s(.+\\\s*\n)*'
-            r'(.*(\n|\Z))' %(prog)
-            )
+            r'(?<!#.)%s'                    # prog(ram)/keyword exists, but not in comment. 
+            r'(.+\\\n)*?'                   # allow for linebreaks before flag
+            r'.*?%s\s*?'                    # flag
+            r'(\s*?[\w\._-]+?\s*?)'         # argument to keyword
+            r'(.*(\n|\Z))' %(prog,flag)      # account for newline / eof
+            ,re.M)
 
         all_lints = ''
         linted = None
@@ -183,13 +192,16 @@ class FileExists(Linter):
 
         all = []
 
+        # iterate over 'prog(gram) (flag) argument' instances
         for prog_instance in regex.finditer(code):
+            felogger.debug("FileExists, flagged argument found"+prog_instance.group(0))
             all.append(prog_instance.group(0))
-            file_regex = re.compile(r'(?P<flag>%s)[\s\\]+(?P<fname>[/\w\.\/_-]+)'%arg,
+            # extract filename
+            file_regex = re.compile(r'(?P<flag>%s)[\s\\]+(?P<fname>[/\w\.\/_-]+)'%flag,
                 re.M)
 
             for file_instance in file_regex.finditer(prog_instance.group(0)):
-                print(file_instance.group(0))
+                felogger.debug("FileExists, check for %s"%file_instance.group(0))
                 linted = self.checkForFile(code, path, file_instance, \
                     prog_instance, inputfile)
                 linted = self.checkForFile(code, path, file_instance, prog_instance, inputfile)
