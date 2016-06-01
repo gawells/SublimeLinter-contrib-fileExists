@@ -11,6 +11,8 @@
 	 			"source.shell",
 				"tcl",
 				"source.namd",
-				"namd"
+				"namd",
+				"slurm",
+				"source.slurm"
 			]
 }
