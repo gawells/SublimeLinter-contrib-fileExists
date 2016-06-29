@@ -32,13 +32,14 @@ import logging
 
 # SYNTAX = "source.shell"
 
+PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
 SYNTAX = 'source.shell'
+SYNTAX = PLUGIN_SETTINGS.get("syntax")
 
 def plugin_loaded():
     global SYNTAX
-    PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
     print (sublime.find_resources("fileExists.sublime-settings"))
-    SYNTAX = PLUGIN_SETTINGS.get("syntax")
+    # felogger.debug("FileExists syntaxes: %s"%','.join(SYNTAX))
     DEBUG = PLUGIN_SETTINGS.get("debug", False)
 
     logging.basicConfig(format='[fileExists] %(message)s ')
@@ -50,7 +51,6 @@ def plugin_loaded():
     else:
         felogger.setLevel(logging.WARNING)
 
-    print("=========================================================")
     # sublime_plugin.reload_plugin("SublimeLinter")
 
 class FileExists(Linter):
@@ -58,7 +58,7 @@ class FileExists(Linter):
     """Provides an interface to fileExists."""
 
     syntax = tuple(SYNTAX)
-    print(syntax)
+    # felogger.debug("FileExists syntaxes: %s"%','.join(syntax))
     cmd = None
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'
@@ -72,6 +72,7 @@ class FileExists(Linter):
     inline_settings = None
     inline_overrides = None
     comment_re = None
+    # felogger.debug("FileExists syntaxes: %s"%','.join([x for x in syntax]))
 
     @classmethod
     def posToRowCol(cls, pos, code):
