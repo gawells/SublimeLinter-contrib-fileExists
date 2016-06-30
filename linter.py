@@ -206,7 +206,7 @@ class FileExists(Linter):
         regex = re.compile(
             r'(?<!#.)%s'                    # prog(ram)/keyword exists, but not in comment. 
             r'(.+\\\n)*?'                   # allow for linebreaks before flag
-            r'.*?%s\s*?'                    # flag
+            r'.*?%s\s+?'                    # flag
             r'(\s*?[\w\._-]+?\s*?)'         # argument to keyword
             r'(.*(\n|\Z))' %(prog,flag)      # account for newline / eof
             ,re.M)
