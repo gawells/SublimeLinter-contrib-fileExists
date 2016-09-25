@@ -18,32 +18,33 @@ import sublime_plugin
 import json
 import logging
 
-# PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
-# SYNTAX = PLUGIN_SETTINGS.get("syntax")
-# DEBUG = PLUGIN_SETTINGS.get("debug", False)
+PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
+DEBUG = PLUGIN_SETTINGS.get("debug", False)
 
-# logging.basicConfig(format='[fileExists] %(message)s ')
-# felogger = logging.getLogger(__name__)
+logging.basicConfig(format='[fileExists] %(message)s ')
+felogger = logging.getLogger(__name__)
+felogger.debug('FileExists preload')
 
-# if (DEBUG):
-#     felogger.setLevel(logging.DEBUG)
-# else:
-#     felogger.setLevel(logging.WARNING)
+if (DEBUG):
+    felogger.setLevel(logging.DEBUG)
+else:
+    felogger.setLevel(logging.WARNING)
 
 # SYNTAX = "source.shell"
 
-PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
+# PLUGIN_SETTINGS = sublime.load_settings("fileExists.sublime-settings")
 SYNTAX = 'source.shell'
 SYNTAX = PLUGIN_SETTINGS.get("syntax")
+felogger.debug("FileExists syntaxes (pre): %s"%SYNTAX)
+# felogger.debug("FileExists syntaxes (pre): %s"%','.join(SYNTAX))
 
 def plugin_loaded():
     global SYNTAX
-    print (sublime.find_resources("fileExists.sublime-settings"))
-    # felogger.debug("FileExists syntaxes: %s"%','.join(SYNTAX))
+    global felogger 
+    # print (sublime.find_resources("fileExists.sublime-settings"))
     DEBUG = PLUGIN_SETTINGS.get("debug", False)
 
     logging.basicConfig(format='[fileExists] %(message)s ')
-    global felogger 
     felogger = logging.getLogger(__name__)
 
     if (DEBUG):
@@ -57,8 +58,9 @@ class FileExists(Linter):
 
     """Provides an interface to fileExists."""
 
+    syntax = ['shell-unix-generic']
     syntax = tuple(SYNTAX)
-    # felogger.debug("FileExists syntaxes: %s"%','.join(syntax))
+    felogger.debug("FileExists syntaxes (class) : %s"%','.join(syntax))
     cmd = None
     regex = (
         r'^.+?:(?P<line>\d+):(?P<col>\d+):'

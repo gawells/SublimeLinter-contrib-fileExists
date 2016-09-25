@@ -8,11 +8,9 @@
 	"syntax": [
 				"pbs",
 				"shell-unix-generic",
-	 			"source.shell",
 				"tcl",
-				"source.namd",
 				"namd",
 				"slurm",
-				"source.slurm"
-			]
+			],
+	"enabled": true
 }
